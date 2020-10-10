@@ -2,7 +2,7 @@ import json
 
 from django.shortcuts import render
 from rest_framework.decorators import api_view
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse,HttpResponseRedirect
 import json
 
 
@@ -21,28 +21,32 @@ def login(request):
     return render(request, "login.html")
 
 
-# @api_view(['GET', 'POST'])
-def api_login(request):
-    # global res
-    username = ''
-    password = ''
+def home(request):
+    # 判断cookie是否存在
+    if request.COOKIES.get('uid') == '1' and request.COOKIES.get('username') == 'admin'\
+            and request.COOKIES.get('pwd') == 'admin':
+        return render(request, "home.html")
+    else:
+        return HttpResponseRedirect('/user/login/')
 
-    # if request.method == 'GET':
-    #     username = request.GET.get('username')
-    #     password = request.GET.get('password')
-    #
-    # else:
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+
+@api_view(['POST'])
+def api_login(request):
+    username = request.POST.get('username')
+    password = request.POST.get('password')
 
     if username is not None and password is not None:
         if username == 'admin' and password == 'admin':
-            res = render(request, 'home.html', context={"username": username})
-            # res.set_cookie("cookies","1234")
-            return 11
+            res = HttpResponseRedirect('/user/home/')
+            # HttpResponseRedirect重定向
 
-       else:
+            # res = render(request, 'home.html', context={"username": username})
+            res.set_cookie("uid", "1")
+            res.set_cookie("username", "admin")
+            res.set_cookie("pwd", "admin")
+            return res
+
+        else:
             return render(request, 'error.html', context={"msg": "账号或者密码错误"})
 
     else:
