@@ -4,6 +4,7 @@ from django.shortcuts import render
 from rest_framework.decorators import api_view
 from django.http import HttpResponse, JsonResponse,HttpResponseRedirect
 import json
+from util import *
 
 
 def hello(request):
@@ -24,7 +25,7 @@ def login(request):
 def home(request):
     # 判断cookie是否存在
     if request.COOKIES.get('uid') == '1' and request.COOKIES.get('username') == 'admin'\
-            and request.COOKIES.get('pwd') == 'admin':
+            and request.get_signed_cookie('pwd','123'):
         return render(request, "home.html")
     else:
         return HttpResponseRedirect('/user/login/')
@@ -34,17 +35,26 @@ def home(request):
 def api_login(request):
     username = request.POST.get('username')
     password = request.POST.get('password')
+    is_cookie=  request.POST.get('is_login')
+    print(is_cookie)
 
     if username is not None and password is not None:
-        if username == 'admin' and password == 'admin':
+        is_av = is_login(username, password)
+
+        if is_av is not None:
             res = HttpResponseRedirect('/user/home/')
             # HttpResponseRedirect重定向
-
             # res = render(request, 'home.html', context={"username": username})
-            res.set_cookie("uid", "1")
-            res.set_cookie("username", "admin")
-            res.set_cookie("pwd", "admin")
+            # if is_cookie == 'on':
+            res.set_cookie("uid", is_av, max_age=86400)
+            res.set_cookie("username", username, max_age=86400)
+            res.set_signed_cookie("pwd", password, '1234', max_age=86400)
             return res
+            # else:
+            #     res.set_cookie("uid", is_av)
+            #     res.set_cookie("username", username)
+            #     res.set_signed_cookie("pwd", password, '1234')
+            #     return res
 
         else:
             return render(request, 'error.html', context={"msg": "账号或者密码错误"})
